@@ -1,0 +1,133 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 22 16:16:34 2020
+
+@author: Carlos Quinchia
+"""
+
+########## LIBRERÍAS A UTILIZAR ##########
+#Se importan la librerias a utilizar
+import numpy as np
+from sklearn import linear_model
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import statsmodels.api as sm
+import seaborn as sns 
+from matplotlib.font_manager import FontProperties
+from statsmodels.sandbox.regression.predstd import wls_prediction_std
+from scipy import stats 
+
+#Manejo de fuentes
+font = FontProperties()
+font.set_family('serif')
+font.set_name('Times New Roman')
+font.set_style('italic')
+
+########## PREPARAR LA DATA ##########
+#Importamos los datos de la librería 
+file='D:\Mis documentos\Escritorio\dep\demo.txt'
+x = np.loadtxt(file,delimiter='\t',skiprows=0,usecols=[1]).astype(float)
+y = np.loadtxt(file,delimiter='\t',skiprows=0,usecols=[0]).astype(float)
+n=np.size(x)
+
+xy=np.dot(x,y)
+Sy=np.sum(y)
+Sx=np.sum(x)
+xmed=Sx/n
+ymed=Sy/n
+Fn=xy-(n*xmed*ymed)
+SqSx=np.power(x,2)
+SS=np.sum(SqSx)
+Sqxmed=xmed**2
+Sxx=SS-(n*Sqxmed)
+beta = Fn/Sxx
+B0=ymed-(beta*xmed)
+ye = beta * x + B0 
+
+#Parametros
+X = sm.add_constant(x)
+re = sm.OLS(y, X).fit()
+
+print()
+print('                  DATOS DEL MODELO REGRESIÓN LINEAL SIMPLE MCO')
+print(str(re.summary()))
+
+
+# Creo un modelo de regresión lineal
+yp = linear_model.LinearRegression()
+print()
+print('La ecuación del modelo es igual a:')
+print('Y =  Xi',"{:.2f}".format(beta),'+',"{:.2f}".format(B0))
+# Parte 2. Calculos estadisticos fundamentales de la R.L
+# Datos de estimación Y_estimado
+def f (ye) : 
+    ye = []
+    
+    for i in range(1,n+1):
+        ye.append(beta * x + B0 )
+        
+    return ye
+
+resultado= f(n)   
+# Matriz valores estimados de la muestra
+SqmY=np.power(y-ye,2)
+SCE=np.sum(SqmY)
+CME=SCE/(n-2)
+S=CME**(1/2)
+S2=S**2
+SSR=((beta**2)*Sxx)
+Syy=SCE+((beta**2)*Sxx)
+SB1=(S/Sxx**(1/2))
+R2=(SSR/Syy)*100
+R12=(100-R2)
+
+print('==============================================================================')
+print('                  Precisión del modelo de regresión:')
+print('==============================================================================')
+
+slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+
+print('Coeficiente de correlación: ',"{:.2f}".format(r_value),'      Sxx                            ',"{:.2f}".format(Sxx))
+print('Valor p asociado a beta:    ',"{:.2f}".format(p_value),'      SSR                            ',"{:.2f}".format(SSR))
+print('Error estándar de beta:     ',"{:.2f}".format(std_err),'      SST                            ',"{:.2f}".format(Syy))
+print('Desviación estandar (S)     ',"{:.2f}".format(S),'      Varianza                         ',"{:.2f}".format(S2))
+print('Explicado                   ',"{:.2f}".format(R2),'%','   No se explica                 ',"{:.2f}".format(R12),'%')
+print('==============================================================================')
+#t = qt(p = 0.95 + 0.05/2, df = 15, lower.tail = TRUE)
+#print('t',"{:.2f}".format(t),'%')
+print()
+# Parte 3. Graficamos los datos junto con el modelo
+# Se acomoda Automáticamente al tamaño de la ventana (1 sola fila o Columna) 
+fig1, (ax1,ax2) = plt.subplots(ncols=2, nrows=1, constrained_layout=True)
+fig1.subplots_adjust(bottom=0.15, left=0.2)
+# Con Ajuste manual (1 sola fila o Columna)
+#fig2, (ax1,ax2,ax3,ax4) = plt.subplots(ncols=4, nrows=1, figsize=(9, 4.5))
+# Se acomoda Automáticamente al tamaño de la ventana ('n' rows x Cols) 
+#fig3, ax1 = plt.subplots(ncols=2, nrows=2, constrained_layout=True)
+ax1.scatter(x, y)
+ax1.plot(x,ye,color='red', linewidth=3)
+ax1.set_title('Regresión Lineal Simple MCO')
+#ax1.set_xlabel('Volatilidad_anual \n Y =  Xi*B1 + B0')
+ax1.set_xlabel('Volatilidad_anual')
+ax1.set_ylabel('Rend_Medio%')
+#plt.show()
+#plt.tight_layout()
+# Graficando Normal
+mu, sigma = 0, S # media y desvio estandar
+normal = stats.norm(mu, sigma)
+x = np.linspace(normal.ppf(0.01),
+                normal.ppf(0.99), 100)
+
+fp = normal.pdf(x) # Función de Probabilidad
+ax2.plot(x, fp)
+ax2.set_title('Distribución Normal')
+ax2.set_ylabel('probabilidad')
+ax2.set_xlabel('valores')
+plt.show()
+
+
+
+
+
+
+
